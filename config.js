@@ -12,7 +12,6 @@ window.SITE_CONFIG = {
     instagramReal: "https://instagram.com/SEU_USUARIO",
     telegramReal: "https://t.me/SEU_USUARIO",
     telegramBot: "https://paylume.fans/l/yasmimsantoss",
-    previewsReal: "https://t.me/SEU_GRUPO_DE_PREVIAS",
     support: "https://wa.me/55SEUNUMERO",
     rouletteExternal: "https://sharkbot.com.br/r/yasminsantos"
   },
