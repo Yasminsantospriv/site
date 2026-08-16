@@ -2303,3 +2303,40 @@ body.privacy-v13-3{
 .privacy-page-end{
   min-height:calc(44px + env(safe-area-inset-bottom));
 }
+
+
+/* =====================================================
+   V17.7.4 — FINAL LIMPO + SEM CARD DE LOGIN
+   ===================================================== */
+body.privacy-v13-3 .privacy-bottom-login{
+  display:none !important;
+}
+
+body.privacy-v13-3 .page-shell{
+  margin-bottom:0 !important;
+  padding-bottom:0 !important;
+}
+body.privacy-v13-3 .privacy-page-end{
+  position:relative;
+  display:block !important;
+  height:auto !important;
+  min-height:calc(20px + env(safe-area-inset-bottom)) !important;
+  margin-top:8px !important;
+  margin-bottom:0 !important;
+  border-top:1px solid #d9d3cb !important;
+}
+
+html{
+  height:auto !important;
+  min-height:100% !important;
+  background:#f7f4ef !important;
+  overscroll-behavior-y:none;
+}
+body.privacy-v13-3{
+  height:auto !important;
+  min-height:100dvh;
+  margin-bottom:0 !important;
+  overflow-x:hidden;
+  overscroll-behavior-y:none;
+  background:#f7f4ef !important;
+}
