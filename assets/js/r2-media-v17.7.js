@@ -9,6 +9,8 @@
   let posts = [];
   let currentPost = 0;
   let adminSession = null;
+  let adminVerified = false;
+  let adminEditingRow = null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -21,12 +23,101 @@
     } catch { return null; }
   }
 
+  function adminCreateButtons() {
+    const found = new Set($$("[data-instagram-admin-add]"));
+    const desktopCreate = $(".ig-desktop-sidebar button[title='Criar']");
+    if (desktopCreate) {
+      desktopCreate.dataset.instagramAdminAdd = "";
+      found.add(desktopCreate);
+    }
+    $$(".ig-mobile-bottom-nav button").forEach(button => {
+      const text = String(button.textContent || "").trim();
+      if (["⊞", "＋", "+"].includes(text)) {
+        button.dataset.instagramAdminAdd = "";
+        found.add(button);
+      }
+    });
+    return [...found];
+  }
+
+  function lockAdminInstagramUi() {
+    adminCreateButtons().forEach(button => {
+      button.hidden = true;
+      button.setAttribute("aria-hidden", "true");
+      button.tabIndex = -1;
+      button.style.setProperty("display", "none", "important");
+    });
+    const editCurrent = $("#igAdminEditCurrentPost");
+    if (editCurrent) editCurrent.hidden = true;
+  }
+
+  function unlockAdminInstagramUi() {
+    adminCreateButtons().forEach(button => {
+      button.hidden = false;
+      button.setAttribute("aria-hidden", "false");
+      button.removeAttribute("tabindex");
+      button.style.removeProperty("display");
+    });
+    const editCurrent = $("#igAdminEditCurrentPost");
+    if (editCurrent) editCurrent.hidden = false;
+  }
+
+  function ensureAdminFixStyles() {
+    if ($("#yasmin-instagram-admin-fix-style")) return;
+    const style = document.createElement("style");
+    style.id = "yasmin-instagram-admin-fix-style";
+    style.textContent = `
+      [data-instagram-admin-add][hidden]{display:none!important}
+      .post-modal.open{z-index:2147483400!important}
+      .post-modal .yasmin-admin-edit-button{display:none!important}
+      .ig-admin-current-post-edit{margin-left:auto;border:0;border-radius:9px;padding:8px 11px;background:#262b33;color:#fff;font:700 12px/1 Inter,Arial,sans-serif;cursor:pointer}
+      .ig-admin-current-post-edit[hidden]{display:none!important}
+      .ig-admin-post-editor-modal{position:fixed;inset:0;z-index:2147483900;display:grid;place-items:center;padding:18px}
+      .ig-admin-post-editor-modal[hidden]{display:none!important}
+      .ig-admin-post-editor-bg{position:absolute;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(9px)}
+      .ig-admin-post-editor-card{position:relative;z-index:1;width:min(470px,96vw);max-height:92vh;overflow:auto;padding:22px;border:1px solid rgba(255,255,255,.18);border-radius:20px;color:#f7f7f8;background:#171a21;box-shadow:0 28px 80px rgba(0,0,0,.55);font:14px/1.45 Inter,Arial,sans-serif}
+      .ig-admin-post-editor-card h2{margin:0 0 6px}.ig-admin-post-editor-card p{margin:0 0 14px;color:#aeb5c2}
+      .ig-admin-post-editor-preview{width:100%;max-height:300px;object-fit:contain;border-radius:14px;background:#0b0d11;margin:4px 0 14px}
+      .ig-admin-post-editor-card input,.ig-admin-post-editor-card textarea{width:100%;box-sizing:border-box;margin:7px 0;padding:11px;border:1px solid #3c4350;border-radius:10px;color:#fff;background:#101218;font:inherit}
+      .ig-admin-post-editor-card textarea{min-height:88px;resize:vertical}
+      .ig-admin-post-editor-message{min-height:20px;margin-top:8px;color:#9ee6b2}.ig-admin-post-editor-message.error{color:#ff9d9d}
+      .ig-admin-post-editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.ig-admin-post-editor-actions button{flex:1;min-width:105px;min-height:40px;border:0;border-radius:10px;color:#fff;background:#2d3340;font-weight:750;cursor:pointer}.ig-admin-post-editor-actions .save{background:linear-gradient(135deg,#ff8a3d,#e85179)}.ig-admin-post-editor-actions .delete{background:#5a242c}
+    `;
+    document.head.append(style);
+  }
+
+  async function verifyAdminAccess() {
+    const fresh = readAdminSession();
+    if (!fresh) {
+      adminSession = null;
+      adminVerified = false;
+      lockAdminInstagramUi();
+      return false;
+    }
+    adminSession = fresh;
+    try {
+      await adminApi("/api/admin/me");
+      adminVerified = true;
+      return true;
+    } catch {
+      adminSession = null;
+      adminVerified = false;
+      localStorage.removeItem(sessionKey);
+      lockAdminInstagramUi();
+      return false;
+    }
+  }
+
   async function adminApi(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (adminSession?.token) headers.set("Authorization", `Bearer ${adminSession.token}`);
     if (options.body && !(options.body instanceof FormData)) headers.set("Content-Type", "application/json");
     const response = await fetch(`${apiBase}${path}`, { ...options, headers });
     const data = await response.json().catch(() => ({}));
+    if (response.status === 401 || response.status === 403) {
+      adminVerified = false;
+      lockAdminInstagramUi();
+    }
     if (!response.ok) throw new Error(data.erro || `Falha HTTP ${response.status}.`);
     return data;
   }
@@ -148,6 +239,9 @@
     if (!img || !comments || !likeBtn || !saveBtn || !likeCount) return;
 
     img.src = post.mediaUrl;
+    ensureAdminCurrentPostButton();
+    const adminEdit = $("#igAdminEditCurrentPost");
+    if (adminEdit) adminEdit.hidden = !adminVerified;
     const local = readPostState(post.content_id);
     likeBtn.classList.toggle("active", local.liked);
     likeBtn.textContent = local.liked ? "♥" : "♡";
@@ -176,6 +270,7 @@
     modal?.classList.add("open");
     modal?.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+    document.body.classList.add("ig-post-modal-open");
   }
 
   function closePost() {
@@ -183,12 +278,14 @@
     modal?.classList.remove("open");
     modal?.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
+    document.body.classList.remove("ig-post-modal-open");
   }
 
   function bindPostModalOnce() {
     const modal = $("#postModal");
     if (!modal || modal.dataset.r2Bound === "1") return;
     modal.dataset.r2Bound = "1";
+    ensureAdminCurrentPostButton();
     $$("[data-close-post]").forEach(el => el.addEventListener("click", closePost));
     $("#postPrev")?.addEventListener("click", () => {
       if (!posts.length) return;
@@ -286,6 +383,148 @@
     $("[data-carousel-next]")?.addEventListener("click", () => move(1));
   }
 
+  function ensureAdminCurrentPostButton() {
+    const header = $("#postModal .post-side > header");
+    if (!header || $("#igAdminEditCurrentPost")) return;
+    const button = document.createElement("button");
+    button.id = "igAdminEditCurrentPost";
+    button.type = "button";
+    button.className = "ig-admin-current-post-edit";
+    button.textContent = "Alterar foto";
+    button.hidden = true;
+    button.addEventListener("click", openAdminCurrentPostEditor);
+    header.append(button);
+  }
+
+  function ensureAdminPostEditorModal() {
+    if ($("#yasmin-instagram-post-editor")) return;
+    const modal = document.createElement("div");
+    modal.id = "yasmin-instagram-post-editor";
+    modal.className = "ig-admin-post-editor-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="ig-admin-post-editor-bg" data-ig-post-editor-close></div>
+      <section class="ig-admin-post-editor-card" role="dialog" aria-modal="true" aria-label="Alterar publicação do Instagram">
+        <h2>Alterar publicação</h2>
+        <p>Troque somente esta foto ou atualize a legenda.</p>
+        <img class="ig-admin-post-editor-preview" data-ig-post-editor-preview alt="Prévia da publicação">
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.gif" data-ig-post-editor-file>
+        <textarea maxlength="2000" placeholder="Legenda (opcional)" data-ig-post-editor-caption></textarea>
+        <div class="ig-admin-post-editor-message" data-ig-post-editor-message></div>
+        <div class="ig-admin-post-editor-actions">
+          <button type="button" data-ig-post-editor-close>Cancelar</button>
+          <button type="button" class="delete" data-ig-post-editor-delete>Excluir</button>
+          <button type="button" class="save" data-ig-post-editor-save>Salvar</button>
+        </div>
+      </section>`;
+    document.body.append(modal);
+    $$("[data-ig-post-editor-close]", modal).forEach(el => el.addEventListener("click", closeAdminCurrentPostEditor));
+    $("[data-ig-post-editor-save]", modal)?.addEventListener("click", saveAdminCurrentPost);
+    $("[data-ig-post-editor-delete]", modal)?.addEventListener("click", deleteAdminCurrentPost);
+    $("[data-ig-post-editor-file]", modal)?.addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      if (file) $("[data-ig-post-editor-preview]", modal).src = URL.createObjectURL(file);
+    });
+  }
+
+  function closeAdminCurrentPostEditor() {
+    const modal = $("#yasmin-instagram-post-editor");
+    if (modal) modal.hidden = true;
+    adminEditingRow = null;
+  }
+
+  async function openAdminCurrentPostEditor() {
+    if (!(await verifyAdminAccess())) return;
+    const post = posts[currentPost];
+    if (!post) return;
+    ensureAdminPostEditorModal();
+    const modal = $("#yasmin-instagram-post-editor");
+    const message = $("[data-ig-post-editor-message]", modal);
+    if (message) { message.textContent = "Carregando…"; message.classList.remove("error"); }
+    try {
+      const data = await adminApi("/api/admin/conteudos");
+      adminEditingRow = (data.conteudos || []).find(row => row.content_id === post.content_id) || null;
+      if (!adminEditingRow) throw new Error("Esta publicação não foi encontrada no painel administrativo.");
+      $("[data-ig-post-editor-preview]", modal).src = post.mediaUrl;
+      $("[data-ig-post-editor-file]", modal).value = "";
+      $("[data-ig-post-editor-caption]", modal).value = adminEditingRow.caption || post.caption || "";
+      if (message) message.textContent = "";
+      modal.hidden = false;
+    } catch (error) {
+      if (message) { message.textContent = error.message; message.classList.add("error"); }
+      modal.hidden = false;
+    }
+  }
+
+  async function saveAdminCurrentPost() {
+    if (!(await verifyAdminAccess())) return;
+    if (!adminEditingRow) return;
+    const modal = $("#yasmin-instagram-post-editor");
+    const file = $("[data-ig-post-editor-file]", modal)?.files?.[0];
+    const caption = String($("[data-ig-post-editor-caption]", modal)?.value || "").trim();
+    const message = $("[data-ig-post-editor-message]", modal);
+    const button = $("[data-ig-post-editor-save]", modal);
+    button.disabled = true;
+    button.textContent = "Salvando…";
+    try {
+      let mediaKey = adminEditingRow.media_key;
+      if (file) {
+        const payload = new FormData();
+        payload.append("arquivo", file);
+        const upload = await adminApi("/api/admin/upload", { method: "POST", body: payload });
+        mediaKey = upload.mediaKey;
+      }
+      if (!mediaKey) throw new Error("Selecione uma nova imagem para esta publicação.");
+      const id = adminEditingRow.content_id;
+      await adminApi("/api/admin/conteudos", {
+        method: "POST",
+        body: JSON.stringify({
+          contentId: id,
+          secao: "instagram_posts",
+          visibilidade: "public",
+          titulo: adminEditingRow.title || "Publicação Instagram",
+          legenda: caption,
+          ordem: Number(adminEditingRow.sort_order || 0),
+          mediaKey,
+          publicado: true
+        })
+      });
+      if (message) { message.textContent = "Publicação atualizada."; message.classList.remove("error"); }
+      await load();
+      const newIndex = posts.findIndex(item => item.content_id === id);
+      if (newIndex >= 0) currentPost = newIndex;
+      renderPostModal();
+      setTimeout(closeAdminCurrentPostEditor, 450);
+    } catch (error) {
+      if (message) { message.textContent = error.message; message.classList.add("error"); }
+    } finally {
+      button.disabled = false;
+      button.textContent = "Salvar";
+    }
+  }
+
+  async function deleteAdminCurrentPost() {
+    if (!(await verifyAdminAccess())) return;
+    if (!adminEditingRow) return;
+    if (!confirm("Excluir esta publicação do Instagram?")) return;
+    const modal = $("#yasmin-instagram-post-editor");
+    const message = $("[data-ig-post-editor-message]", modal);
+    const button = $("[data-ig-post-editor-delete]", modal);
+    button.disabled = true;
+    button.textContent = "Excluindo…";
+    try {
+      await adminApi(`/api/admin/conteudos/${encodeURIComponent(adminEditingRow.content_id)}`, { method: "DELETE" });
+      closeAdminCurrentPostEditor();
+      closePost();
+      await load();
+    } catch (error) {
+      if (message) { message.textContent = error.message; message.classList.add("error"); }
+    } finally {
+      button.disabled = false;
+      button.textContent = "Excluir";
+    }
+  }
+
   function ensureAdminPostModal() {
     if ($("#yasmin-instagram-publish-modal")) return;
     const modal = document.createElement("div");
@@ -310,7 +549,8 @@
     $("[data-ig-admin-save]", modal)?.addEventListener("click", publishInstagramFromModal);
   }
 
-  function openAdminPostModal() {
+  async function openAdminPostModal() {
+    if (!(await verifyAdminAccess())) return;
     ensureAdminPostModal();
     const modal = $("#yasmin-instagram-publish-modal");
     const file = $("[data-ig-admin-file]", modal);
@@ -323,6 +563,7 @@
   }
 
   async function publishInstagramFromModal() {
+    if (!(await verifyAdminAccess())) return;
     const modal = $("#yasmin-instagram-publish-modal");
     const file = $("[data-ig-admin-file]", modal)?.files?.[0];
     const caption = String($("[data-ig-admin-caption]", modal)?.value || "").trim();
@@ -359,11 +600,10 @@
   }
 
   async function enableAdminInstagramButtons() {
-    adminSession = readAdminSession();
-    if (!adminSession) return;
-    try { await adminApi("/api/admin/me"); } catch { adminSession = null; return; }
-    $$("[data-instagram-admin-add]").forEach(button => {
-      button.hidden = false;
+    lockAdminInstagramUi();
+    if (!(await verifyAdminAccess())) return;
+    unlockAdminInstagramUi();
+    adminCreateButtons().forEach(button => {
       if (button.dataset.bound === "1") return;
       button.dataset.bound = "1";
       button.addEventListener("click", openAdminPostModal);
@@ -395,6 +635,9 @@
   }
 
   window.YasminR2Media = Object.freeze({ reload: load, state: () => state });
+
+  ensureAdminFixStyles();
+  lockAdminInstagramUi();
 
   document.addEventListener("DOMContentLoaded", async () => {
     bindPreviewArrows();
