@@ -11,6 +11,7 @@
   let adminSession = null;
   let adminVerified = false;
   let adminEditingRow = null;
+  let activeHighlightButton = null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -47,8 +48,9 @@
       button.tabIndex = -1;
       button.style.setProperty("display", "none", "important");
     });
-    const editCurrent = $("#igAdminEditCurrentPost");
-    if (editCurrent) editCurrent.hidden = true;
+    const currentActions = $("#igAdminPostImageActions");
+    if (currentActions) currentActions.hidden = true;
+    $$(".ig-admin-grid-actions,.ig-admin-highlight-edit").forEach(el => el.hidden = true);
   }
 
   function unlockAdminInstagramUi() {
@@ -58,8 +60,9 @@
       button.removeAttribute("tabindex");
       button.style.removeProperty("display");
     });
-    const editCurrent = $("#igAdminEditCurrentPost");
-    if (editCurrent) editCurrent.hidden = false;
+    const currentActions = $("#igAdminPostImageActions");
+    if (currentActions) currentActions.hidden = false;
+    $$(".ig-admin-grid-actions,.ig-admin-highlight-edit").forEach(el => el.hidden = false);
   }
 
   function ensureAdminFixStyles() {
@@ -70,8 +73,15 @@
       [data-instagram-admin-add][hidden]{display:none!important}
       .post-modal.open{z-index:2147483400!important}
       .post-modal .yasmin-admin-edit-button{display:none!important}
-      .ig-admin-current-post-edit{margin-left:auto;border:0;border-radius:9px;padding:8px 11px;background:#262b33;color:#fff;font:700 12px/1 Inter,Arial,sans-serif;cursor:pointer}
-      .ig-admin-current-post-edit[hidden]{display:none!important}
+      .ig-admin-post-header-actions{margin-left:auto;display:flex;align-items:center;gap:7px}
+      .ig-admin-post-header-actions[hidden]{display:none!important}
+      .ig-admin-current-post-edit,.ig-admin-current-post-delete{border:0;border-radius:9px;padding:8px 10px;color:#fff;font:700 12px/1 Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+      .ig-admin-current-post-edit{background:#262b33}
+      .ig-admin-current-post-delete{background:#5a242c}
+      @media(max-width:460px){
+        .ig-admin-post-header-actions{width:100%;margin-left:52px;margin-top:6px}
+        .ig-admin-current-post-edit,.ig-admin-current-post-delete{flex:1;padding:8px 9px}
+      }
       .ig-admin-post-editor-modal{position:fixed;inset:0;z-index:2147483900;display:grid;place-items:center;padding:18px}
       .ig-admin-post-editor-modal[hidden]{display:none!important}
       .ig-admin-post-editor-bg{position:absolute;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(9px)}
@@ -82,6 +92,35 @@
       .ig-admin-post-editor-card textarea{min-height:88px;resize:vertical}
       .ig-admin-post-editor-message{min-height:20px;margin-top:8px;color:#9ee6b2}.ig-admin-post-editor-message.error{color:#ff9d9d}
       .ig-admin-post-editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.ig-admin-post-editor-actions button{flex:1;min-width:105px;min-height:40px;border:0;border-radius:10px;color:#fff;background:#2d3340;font-weight:750;cursor:pointer}.ig-admin-post-editor-actions .save{background:linear-gradient(135deg,#ff8a3d,#e85179)}.ig-admin-post-editor-actions .delete{background:#5a242c}
+      .ig-post-tile{position:relative;min-width:0;overflow:hidden}
+      .ig-post-tile>.ig-post-open{width:100%;height:100%;display:block;border:0;padding:0;background:transparent}
+      .ig-post-tile>.ig-post-open img{width:100%;height:100%;object-fit:cover}
+      .ig-admin-grid-actions{position:absolute;left:6px;right:6px;bottom:6px;z-index:12;display:flex;gap:6px;pointer-events:auto}
+      .ig-admin-grid-actions[hidden]{display:none!important}
+      .ig-admin-grid-actions button{flex:1;min-width:0;min-height:30px;padding:5px 7px;border:1px solid rgba(255,255,255,.28);border-radius:9px;color:#fff;background:rgba(10,12,16,.88);backdrop-filter:blur(8px);font:700 11px/1 Inter,Arial,sans-serif}
+      .ig-admin-grid-actions button.delete{background:rgba(92,28,38,.92)}
+      .ig-admin-post-image-actions{position:absolute;left:50%;bottom:14px;z-index:8;transform:translateX(-50%);display:flex;gap:8px;padding:7px;border-radius:13px;background:rgba(10,12,16,.84);backdrop-filter:blur(10px)}
+      .ig-admin-post-image-actions[hidden]{display:none!important}
+      .ig-admin-post-image-actions button{min-height:34px;padding:0 12px;border:0;border-radius:9px;color:#fff;background:#262b33;font:700 12px/1 Inter,Arial,sans-serif}
+      .ig-admin-post-image-actions button.delete{background:#5a242c}
+      .ig-highlight-admin-wrap{position:relative;display:grid;justify-items:center;min-width:0}
+      .ig-highlight-admin-wrap>button[data-story]{width:100%}
+      .ig-admin-highlight-edit{position:absolute!important;top:0!important;right:0!important;z-index:18!important;width:28px!important;height:28px!important;display:grid!important;place-items:center!important;padding:0!important;border:1px solid rgba(255,255,255,.5)!important;border-radius:50%!important;color:#fff!important;background:rgba(10,12,16,.88)!important;font:800 13px/1 Inter,Arial,sans-serif!important;box-shadow:0 6px 16px rgba(0,0,0,.3)!important}
+      .ig-admin-highlight-edit[hidden]{display:none!important}
+      .ig-admin-highlight-modal{position:fixed;inset:0;z-index:2147483950;display:grid;place-items:center;padding:18px}
+      .ig-admin-highlight-modal[hidden]{display:none!important}
+      .ig-admin-highlight-bg{position:absolute;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(9px)}
+      .ig-admin-highlight-card{position:relative;z-index:1;width:min(440px,96vw);padding:22px;border:1px solid rgba(255,255,255,.18);border-radius:20px;color:#f7f7f8;background:#171a21;box-shadow:0 28px 80px rgba(0,0,0,.55);font:14px/1.45 Inter,Arial,sans-serif}
+      .ig-admin-highlight-card h2{margin:0 0 6px}.ig-admin-highlight-card p{margin:0 0 14px;color:#aeb5c2}
+      .ig-admin-highlight-preview{width:112px;height:112px;display:block;margin:8px auto 14px;border-radius:50%;object-fit:cover;background:#0b0d11}
+      .ig-admin-highlight-card input{width:100%;box-sizing:border-box;margin:7px 0;padding:11px;border:1px solid #3c4350;border-radius:10px;color:#fff;background:#101218;font:inherit}
+      .ig-admin-highlight-message{min-height:20px;margin-top:8px;color:#9ee6b2}.ig-admin-highlight-message.error{color:#ff9d9d}
+      .ig-admin-highlight-actions{display:flex;gap:8px;margin-top:13px}.ig-admin-highlight-actions button{flex:1;min-height:40px;border:0;border-radius:10px;color:#fff;background:#2d3340;font-weight:750}.ig-admin-highlight-actions .save{background:linear-gradient(135deg,#ff8a3d,#e85179)}
+      @media(max-width:720px){
+        .ig-admin-grid-actions{left:4px;right:4px;bottom:4px;gap:4px}
+        .ig-admin-grid-actions button{font-size:10px;min-height:28px;padding:4px}
+        .ig-admin-post-image-actions{bottom:10px}
+      }
     `;
     document.head.append(style);
   }
@@ -239,9 +278,9 @@
     if (!img || !comments || !likeBtn || !saveBtn || !likeCount) return;
 
     img.src = post.mediaUrl;
-    ensureAdminCurrentPostButton();
-    const adminEdit = $("#igAdminEditCurrentPost");
-    if (adminEdit) adminEdit.hidden = !adminVerified;
+    ensureAdminCurrentPostButtons();
+    const adminActions = $("#igAdminPostImageActions");
+    if (adminActions) adminActions.hidden = !adminVerified;
     const local = readPostState(post.content_id);
     likeBtn.classList.toggle("active", local.liked);
     likeBtn.textContent = local.liked ? "♥" : "♡";
@@ -285,7 +324,7 @@
     const modal = $("#postModal");
     if (!modal || modal.dataset.r2Bound === "1") return;
     modal.dataset.r2Bound = "1";
-    ensureAdminCurrentPostButton();
+    ensureAdminCurrentPostButtons();
     $$("[data-close-post]").forEach(el => el.addEventListener("click", closePost));
     $("#postPrev")?.addEventListener("click", () => {
       if (!posts.length) return;
@@ -339,17 +378,51 @@
     grid.replaceChildren();
 
     posts.forEach((post, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.dataset.postIndex = String(index);
+      const tile = document.createElement("div");
+      tile.className = "ig-post-tile";
+
+      const openButton = document.createElement("button");
+      openButton.type = "button";
+      openButton.className = "ig-post-open";
+      openButton.dataset.postIndex = String(index);
+
       const img = document.createElement("img");
       img.src = post.mediaUrl;
       img.alt = `Publicação ${index + 1}`;
       img.loading = "lazy";
       img.dataset.adminIgnore = "true";
-      button.append(img);
-      button.addEventListener("click", () => openPost(index));
-      grid.append(button);
+      openButton.append(img);
+      openButton.addEventListener("click", () => openPost(index));
+      tile.append(openButton);
+
+      const actions = document.createElement("div");
+      actions.className = "ig-admin-grid-actions";
+      actions.hidden = !adminVerified;
+
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.textContent = "Editar";
+      edit.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        currentPost = index;
+        openAdminCurrentPostEditor();
+      });
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "delete";
+      del.textContent = "Excluir";
+      del.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        currentPost = index;
+        deleteAdminCurrentPostDirect();
+      });
+
+      actions.append(edit, del);
+      tile.append(actions);
+      grid.append(tile);
     });
 
     if (!posts.length) {
@@ -358,6 +431,162 @@
       empty.textContent = "Nenhuma publicação ainda.";
       grid.append(empty);
     }
+  }
+
+  function highlightButtons() {
+    const buttons = $$(".ig-highlight-row button[data-story]");
+    const defaults = ["grupo_vip", "previas", "me"];
+    buttons.forEach((button, index) => {
+      if (!button.dataset.highlightKey) button.dataset.highlightKey = defaults[index] || `destaque_${index + 1}`;
+      const label = button.querySelector("small");
+      if (label && !button.dataset.defaultHighlightLabel) button.dataset.defaultHighlightLabel = label.textContent.trim();
+      if (!button.parentElement?.classList.contains("ig-highlight-admin-wrap")) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "ig-highlight-admin-wrap";
+        button.parentNode.insertBefore(wrapper, button);
+        wrapper.append(button);
+      }
+    });
+    return buttons;
+  }
+
+  function applyHighlightSettings() {
+    highlightButtons().forEach(button => {
+      const key = `instagram_highlight_${normalizeSlot(button.dataset.highlightKey)}`;
+      const setting = state.configuracoes?.[key];
+      const label = String(
+        (setting && typeof setting === "object" ? setting.label : setting) ||
+        button.dataset.defaultHighlightLabel ||
+        button.dataset.story ||
+        "Destaque"
+      ).trim().slice(0, 28);
+      const small = button.querySelector("small");
+      if (small) small.textContent = label;
+      button.dataset.story = label;
+      if (button.dataset.highlightStoryBound !== "1") {
+        button.dataset.highlightStoryBound = "1";
+        button.addEventListener("click", () => {
+          const storyImage = $("#storyModal img");
+          const source = button.querySelector("img");
+          if (storyImage && source) storyImage.src = source.currentSrc || source.src || "";
+        });
+      }
+    });
+  }
+
+  function ensureAdminHighlightEditorModal() {
+    if ($("#yasmin-instagram-highlight-editor")) return;
+    const modal = document.createElement("div");
+    modal.id = "yasmin-instagram-highlight-editor";
+    modal.className = "ig-admin-highlight-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="ig-admin-highlight-bg" data-ig-highlight-close></div>
+      <section class="ig-admin-highlight-card" role="dialog" aria-modal="true" aria-label="Editar destaque do Instagram">
+        <h2>Editar destaque</h2>
+        <p>Altere o nome e, se quiser, a foto deste destaque. Isso não cria publicação no Instagram.</p>
+        <img class="ig-admin-highlight-preview" data-admin-ignore="true" data-ig-highlight-preview alt="Prévia do destaque">
+        <input type="text" maxlength="28" placeholder="Nome do destaque" data-ig-highlight-label>
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.gif" data-ig-highlight-file>
+        <div class="ig-admin-highlight-message" data-ig-highlight-message></div>
+        <div class="ig-admin-highlight-actions">
+          <button type="button" data-ig-highlight-close>Cancelar</button>
+          <button type="button" class="save" data-ig-highlight-save>Salvar</button>
+        </div>
+      </section>`;
+    document.body.append(modal);
+    $$("[data-ig-highlight-close]", modal).forEach(button => button.addEventListener("click", closeAdminHighlightEditor));
+    $("[data-ig-highlight-save]", modal)?.addEventListener("click", saveAdminHighlight);
+    $("[data-ig-highlight-file]", modal)?.addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      if (file) $("[data-ig-highlight-preview]", modal).src = URL.createObjectURL(file);
+    });
+  }
+
+  function closeAdminHighlightEditor() {
+    const modal = $("#yasmin-instagram-highlight-editor");
+    if (modal) modal.hidden = true;
+    activeHighlightButton = null;
+  }
+
+  async function openAdminHighlightEditor(button) {
+    if (!(await verifyAdminAccess())) return;
+    activeHighlightButton = button;
+    ensureAdminHighlightEditorModal();
+    const modal = $("#yasmin-instagram-highlight-editor");
+    const image = button.querySelector("img");
+    const label = button.querySelector("small");
+    $("[data-ig-highlight-preview]", modal).src = image?.currentSrc || image?.src || "";
+    $("[data-ig-highlight-label]", modal).value = label?.textContent?.trim() || "";
+    $("[data-ig-highlight-file]", modal).value = "";
+    const message = $("[data-ig-highlight-message]", modal);
+    if (message) { message.textContent = ""; message.classList.remove("error"); }
+    modal.hidden = false;
+  }
+
+  async function saveAdminHighlight() {
+    if (!(await verifyAdminAccess())) return;
+    if (!activeHighlightButton) return;
+    const modal = $("#yasmin-instagram-highlight-editor");
+    const image = activeHighlightButton.querySelector("img");
+    const file = $("[data-ig-highlight-file]", modal)?.files?.[0];
+    const label = String($("[data-ig-highlight-label]", modal)?.value || "").trim().slice(0, 28);
+    const message = $("[data-ig-highlight-message]", modal);
+    const button = $("[data-ig-highlight-save]", modal);
+    if (!label) {
+      if (message) { message.textContent = "Digite um nome para o destaque."; message.classList.add("error"); }
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Salvando…";
+    try {
+      if (file && image?.dataset.adminSlot) {
+        const form = new FormData();
+        form.append("chave", normalizeSlot(image.dataset.adminSlot));
+        form.append("arquivo", file);
+        const uploaded = await adminApi("/api/admin/editor/imagem", { method: "POST", body: form });
+        applySlot(image, uploaded.mediaUrl);
+        state.configuracoes[`${slotPrefix}${uploaded.chave}`] = { contentId: uploaded.contentId };
+        state.conteudos.push({ content_id: uploaded.contentId, mediaUrl: uploaded.mediaUrl });
+      }
+      const settingKey = `instagram_highlight_${normalizeSlot(activeHighlightButton.dataset.highlightKey)}`;
+      await adminApi("/api/admin/configuracoes", {
+        method: "POST",
+        body: JSON.stringify({ chave: settingKey, valor: { label } })
+      });
+      state.configuracoes[settingKey] = { label };
+      applyHighlightSettings();
+      if (message) { message.textContent = "Destaque atualizado."; message.classList.remove("error"); }
+      setTimeout(closeAdminHighlightEditor, 350);
+    } catch (error) {
+      if (message) { message.textContent = error.message; message.classList.add("error"); }
+    } finally {
+      button.disabled = false;
+      button.textContent = "Salvar";
+    }
+  }
+
+  function bindAdminHighlights() {
+    highlightButtons().forEach(button => {
+      const wrapper = button.parentElement;
+      if (!wrapper) return;
+      let edit = wrapper.querySelector(":scope > .ig-admin-highlight-edit");
+      if (!edit) {
+        edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "ig-admin-highlight-edit";
+        edit.textContent = "✎";
+        edit.title = "Editar destaque";
+        edit.setAttribute("aria-label", "Editar destaque");
+        edit.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openAdminHighlightEditor(button);
+        });
+        wrapper.append(edit);
+      }
+      edit.hidden = !adminVerified;
+    });
   }
 
   function bindPreviewPaywall() {
@@ -383,17 +612,38 @@
     $("[data-carousel-next]")?.addEventListener("click", () => move(1));
   }
 
-  function ensureAdminCurrentPostButton() {
-    const header = $("#postModal .post-side > header");
-    if (!header || $("#igAdminEditCurrentPost")) return;
-    const button = document.createElement("button");
-    button.id = "igAdminEditCurrentPost";
-    button.type = "button";
-    button.className = "ig-admin-current-post-edit";
-    button.textContent = "Alterar foto";
-    button.hidden = true;
-    button.addEventListener("click", openAdminCurrentPostEditor);
-    header.append(button);
+  function ensureAdminCurrentPostButtons() {
+    const host = $("#postModal .post-image");
+    if (!host || $("#igAdminPostImageActions")) return;
+
+    const actions = document.createElement("div");
+    actions.id = "igAdminPostImageActions";
+    actions.className = "ig-admin-post-image-actions";
+    actions.hidden = true;
+
+    const editButton = document.createElement("button");
+    editButton.id = "igAdminEditCurrentPost";
+    editButton.type = "button";
+    editButton.textContent = "Editar publicação";
+    editButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openAdminCurrentPostEditor();
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.id = "igAdminDeleteCurrentPost";
+    deleteButton.type = "button";
+    deleteButton.className = "delete";
+    deleteButton.textContent = "Excluir publicação";
+    deleteButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      deleteAdminCurrentPostDirect();
+    });
+
+    actions.append(editButton, deleteButton);
+    host.append(actions);
   }
 
   function ensureAdminPostEditorModal() {
@@ -407,7 +657,7 @@
       <section class="ig-admin-post-editor-card" role="dialog" aria-modal="true" aria-label="Alterar publicação do Instagram">
         <h2>Alterar publicação</h2>
         <p>Troque somente esta foto ou atualize a legenda.</p>
-        <img class="ig-admin-post-editor-preview" data-ig-post-editor-preview alt="Prévia da publicação">
+        <img class="ig-admin-post-editor-preview" data-admin-ignore="true" data-ig-post-editor-preview alt="Prévia da publicação">
         <input type="file" accept=".jpg,.jpeg,.png,.webp,.gif" data-ig-post-editor-file>
         <textarea maxlength="2000" placeholder="Legenda (opcional)" data-ig-post-editor-caption></textarea>
         <div class="ig-admin-post-editor-message" data-ig-post-editor-message></div>
@@ -433,6 +683,46 @@
     adminEditingRow = null;
   }
 
+  async function resolveAdminCurrentPostRow() {
+    if (!(await verifyAdminAccess())) return null;
+    const post = posts[currentPost];
+    if (!post) return null;
+    const data = await adminApi("/api/admin/conteudos");
+    const row = (data.conteudos || []).find(item => item.content_id === post.content_id) || null;
+    if (!row) throw new Error("Esta publicação não foi encontrada no painel administrativo.");
+    return row;
+  }
+
+  async function deleteAdminCurrentPostDirect() {
+    let row;
+    try {
+      row = await resolveAdminCurrentPostRow();
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+    if (!row) return;
+    if (!confirm("Excluir esta publicação do Instagram?")) return;
+
+    const button = $("#igAdminDeleteCurrentPost");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Excluindo…";
+    }
+    try {
+      await adminApi(`/api/admin/conteudos/${encodeURIComponent(row.content_id)}`, { method: "DELETE" });
+      closePost();
+      await load();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Excluir";
+      }
+    }
+  }
+
   async function openAdminCurrentPostEditor() {
     if (!(await verifyAdminAccess())) return;
     const post = posts[currentPost];
@@ -442,9 +732,8 @@
     const message = $("[data-ig-post-editor-message]", modal);
     if (message) { message.textContent = "Carregando…"; message.classList.remove("error"); }
     try {
-      const data = await adminApi("/api/admin/conteudos");
-      adminEditingRow = (data.conteudos || []).find(row => row.content_id === post.content_id) || null;
-      if (!adminEditingRow) throw new Error("Esta publicação não foi encontrada no painel administrativo.");
+      adminEditingRow = await resolveAdminCurrentPostRow();
+      if (!adminEditingRow) return;
       $("[data-ig-post-editor-preview]", modal).src = post.mediaUrl;
       $("[data-ig-post-editor-file]", modal).value = "";
       $("[data-ig-post-editor-caption]", modal).value = adminEditingRow.caption || post.caption || "";
@@ -601,7 +890,13 @@
 
   async function enableAdminInstagramButtons() {
     lockAdminInstagramUi();
-    if (!(await verifyAdminAccess())) return;
+    if (!(await verifyAdminAccess())) {
+      renderInstagramProfile();
+      bindAdminHighlights();
+      return;
+    }
+    renderInstagramProfile();
+    bindAdminHighlights();
     unlockAdminInstagramUi();
     adminCreateButtons().forEach(button => {
       if (button.dataset.bound === "1") return;
@@ -612,10 +907,12 @@
 
   function renderAll() {
     applySlots();
+    applyHighlightSettings();
     posts = actualInstagramPosts().map(item => ({ ...item, mediaUrl: item.mediaUrl || mediaUrl(item.content_id) }));
     updateInstagramCounts(posts.length);
     renderHomeInstagram();
     renderInstagramProfile();
+    bindAdminHighlights();
     bindPreviewPaywall();
   }
 

@@ -126,7 +126,7 @@
     modal.id = "yasmin-admin-editor-modal";
     modal.className = "yasmin-admin-modal";
     modal.hidden = true;
-    modal.innerHTML = `<div class="yasmin-admin-modal-bg" data-editor-close></div><section class="yasmin-admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="yasmin-editor-title"><h2 id="yasmin-editor-title">Alterar imagem</h2><p data-editor-slot-label></p><div class="yasmin-admin-preview"><img data-editor-preview alt="Prévia"></div><input class="yasmin-admin-file" data-editor-file type="file" accept=".jpg,.jpeg,.png,.webp,.gif"><input class="yasmin-admin-file" data-editor-caption maxlength="2000" placeholder="Legenda para o Instagram (opcional)"><div class="yasmin-admin-editor-message" data-editor-message></div><div class="yasmin-admin-modal-actions"><button type="button" data-editor-close>Cancelar</button><button class="restore" type="button" data-editor-restore>Remover imagem</button><button class="instagram" type="button" data-editor-instagram>Publicar no Instagram</button><button class="save" type="button" data-editor-save>Enviar e aplicar</button></div></section>`;
+    modal.innerHTML = `<div class="yasmin-admin-modal-bg" data-editor-close></div><section class="yasmin-admin-modal-card" role="dialog" aria-modal="true" aria-labelledby="yasmin-editor-title"><h2 id="yasmin-editor-title">Alterar imagem</h2><p data-editor-slot-label></p><div class="yasmin-admin-preview"><img data-admin-ignore="true" data-editor-preview alt="Prévia"></div><input class="yasmin-admin-file" data-editor-file type="file" accept=".jpg,.jpeg,.png,.webp,.gif"><div class="yasmin-admin-editor-message" data-editor-message></div><div class="yasmin-admin-modal-actions"><button type="button" data-editor-close>Cancelar</button><button class="restore" type="button" data-editor-restore>Remover imagem</button><button class="save" type="button" data-editor-save>Enviar e aplicar</button></div></section>`;
     document.body.append(modal);
     modal.querySelectorAll("[data-editor-close]").forEach(el => el.addEventListener("click", closeModal));
     modal.querySelector("[data-editor-file]").addEventListener("change", event => {
@@ -134,7 +134,6 @@
       if (file) modal.querySelector("[data-editor-preview]").src = URL.createObjectURL(file);
     });
     modal.querySelector("[data-editor-save]").addEventListener("click", saveImage);
-    modal.querySelector("[data-editor-instagram]").addEventListener("click", publishToInstagram);
     modal.querySelector("[data-editor-restore]").addEventListener("click", restoreImage);
   }
 
@@ -191,40 +190,6 @@
     }
   }
 
-  async function publishToInstagram() {
-    const modal = document.getElementById("yasmin-admin-editor-modal");
-    const file = modal?.querySelector("[data-editor-file]")?.files?.[0];
-    const caption = String(modal?.querySelector("[data-editor-caption]")?.value || "").trim();
-    if (!file) return editorMessage("Selecione uma imagem primeiro.", true);
-    const button = modal.querySelector("[data-editor-instagram]");
-    button.disabled = true;
-    button.textContent = "Publicando…";
-    try {
-      const payload = new FormData();
-      payload.append("arquivo", file);
-      const upload = await api("/api/admin/upload", { method: "POST", body: payload });
-      await api("/api/admin/conteudos", {
-        method: "POST",
-        body: JSON.stringify({
-          secao: "instagram_posts",
-          visibilidade: "public",
-          titulo: "Publicação Instagram",
-          legenda: caption,
-          ordem: 0,
-          mediaKey: upload.mediaKey,
-          publicado: true
-        })
-      });
-      editorMessage("Publicado no Instagram e salvo no R2.");
-      await window.YasminR2Media?.reload?.();
-    } catch (error) {
-      editorMessage(error.message, true);
-    } finally {
-      button.disabled = false;
-      button.textContent = "Publicar no Instagram";
-    }
-  }
-
   async function restoreImage() {
     if (!activeTarget) return;
     const slot = normalizeSlot(activeTarget.dataset.adminSlot);
@@ -242,6 +207,8 @@
     autoAssignSlots();
     document.querySelectorAll("[data-admin-slot]").forEach(target => {
       if (target.dataset.adminButtonAttached === "1") return;
+      if (target.dataset.adminIgnore === "true") return;
+      if (target.closest("#postModal,.ig-post-grid,.ig-highlight-row,.ig-admin-publish-modal,.ig-admin-post-editor-modal,.ig-admin-highlight-modal")) return;
       const host = target.dataset.adminKind === "background" ? target : target.parentElement;
       if (!host || host.closest(".yasmin-admin-toolbar,.yasmin-admin-modal")) return;
       target.dataset.adminButtonAttached = "1";

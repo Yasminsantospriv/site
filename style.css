@@ -2015,3 +2015,90 @@ body.instagram-reference{
     margin-bottom:0 !important;
   }
 }
+
+
+/* =====================================================
+   V17.7.5 — MODAL DE POSTS ESTÁVEL + CONTROLES ADMIN
+   ===================================================== */
+
+/* Impede a imagem do post de ultrapassar a própria área e aparecer
+   por baixo do cabeçalho/comentários no celular. */
+.ig-post-dialog .post-image{
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.ig-post-dialog .post-image > img{
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+}
+.ig-post-dialog .post-side{
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.ig-post-dialog .post-side > header{
+  flex:0 0 auto;
+  min-width:0;
+}
+.ig-post-dialog .post-comments{
+  min-height:0;
+  overflow:auto;
+}
+
+@media(max-width:760px){
+  .post-modal.open{
+    align-items:stretch !important;
+  }
+  .ig-post-dialog{
+    width:100vw !important;
+    height:100dvh !important;
+    max-height:100dvh !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    grid-template-rows:minmax(0,62dvh) minmax(0,38dvh) !important;
+    border-radius:0 !important;
+    overflow:hidden !important;
+  }
+  .ig-post-dialog .post-image{
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:hidden !important;
+    background:#000 !important;
+  }
+  .ig-post-dialog .post-image > img{
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+    object-fit:contain !important;
+  }
+  .ig-post-dialog .post-side{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:hidden !important;
+    background:#0b0f14 !important;
+  }
+  .ig-post-dialog .post-side > header{
+    position:relative !important;
+    z-index:2 !important;
+    flex-wrap:wrap;
+    padding:11px 13px !important;
+    background:#0b0f14 !important;
+  }
+  .ig-post-dialog .post-comments{
+    overflow:auto !important;
+  }
+  .ig-post-dialog .post-actions{
+    flex:0 0 auto;
+  }
+  .ig-post-dialog .like-count,
+  .ig-post-dialog form{
+    flex:0 0 auto;
+  }
+}

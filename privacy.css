@@ -2340,3 +2340,75 @@ body.privacy-v13-3{
   overscroll-behavior-y:none;
   background:#f7f4ef !important;
 }
+
+
+/* =====================================================
+   V17.7.5 — PERFIL MOBILE: AVATAR À ESQUERDA SEM SOBREPOR CONTADORES
+   ===================================================== */
+@media(max-width:620px){
+  body.privacy-v13-3 .profile-summary-row{
+    min-height:0 !important;
+    display:grid !important;
+    grid-template-columns:96px minmax(0,1fr) !important;
+    grid-template-rows:auto auto !important;
+    align-items:end !important;
+    gap:10px 12px !important;
+  }
+  body.privacy-v13-3 .avatar-button{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    justify-self:start !important;
+    align-self:end !important;
+    width:96px !important;
+    height:96px !important;
+    margin:-40px 0 0 !important;
+  }
+  body.privacy-v13-3 .avatar-button .avatar,
+  body.privacy-v13-3 .profile-card .avatar{
+    width:96px !important;
+    height:96px !important;
+    border-width:6px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline{
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:4px !important;
+    margin:2px 0 0 !important;
+    padding:12px 0 0 !important;
+    border-top:1px solid #ebe6e0 !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline div{
+    min-width:0 !important;
+    justify-content:center !important;
+    gap:4px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+}
+@media(max-width:390px){
+  body.privacy-v13-3 .profile-summary-row{
+    grid-template-columns:88px minmax(0,1fr) !important;
+    gap:9px 10px !important;
+  }
+  body.privacy-v13-3 .avatar-button{
+    width:88px !important;
+    height:88px !important;
+    margin-top:-36px !important;
+  }
+  body.privacy-v13-3 .avatar-button .avatar,
+  body.privacy-v13-3 .profile-card .avatar{
+    width:88px !important;
+    height:88px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline strong{
+    font-size:.8rem !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline span{
+    font-size:.66rem !important;
+  }
+}

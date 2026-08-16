@@ -4,6 +4,7 @@
   const cfg = window.YASMIN_APP_CONFIG || {};
   const apiBase = String(cfg.apiBase || "").replace(/\/$/, "");
   const sessionKey = cfg.storageKeys?.subscriberSession || "yasmin_subscriber_session_v136";
+  const adminSessionKey = cfg.storageKeys?.adminSession || "yasmin_admin_session_v136";
   let activeContext = "site";
 
   const readSession = () => {
@@ -73,6 +74,12 @@
           turnstileToken
         })
       });
+      if (data.tipo === "admin") {
+        localStorage.setItem(adminSessionKey, JSON.stringify(data.sessao));
+        showMessage("Modo administrador ativado.");
+        setTimeout(() => location.reload(), 180);
+        return;
+      }
       saveSession(data.sessao);
       await deliverAfterLogin();
     } catch (error) {
