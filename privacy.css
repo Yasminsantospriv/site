@@ -2412,3 +2412,102 @@ body.privacy-v13-3{
     font-size:.66rem !important;
   }
 }
+
+/* =====================================================
+   V17.7.8 — PRIVACY: AVATAR + CONTADORES NA MESMA LINHA
+   Corrige duplicação dos ícones e mantém os contadores à direita.
+   ===================================================== */
+body.privacy-v13-3 .profile-stats.profile-stats-inline div::before{
+  content:none !important;
+  display:none !important;
+}
+
+@media(max-width:620px){
+  body.privacy-v13-3 .profile-summary-row{
+    min-height:72px !important;
+    display:grid !important;
+    grid-template-columns:96px minmax(0,1fr) !important;
+    grid-template-rows:1fr !important;
+    align-items:center !important;
+    gap:10px 12px !important;
+  }
+  body.privacy-v13-3 .avatar-button{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    justify-self:start !important;
+    align-self:end !important;
+    width:96px !important;
+    height:96px !important;
+    margin:-40px 0 0 !important;
+  }
+  body.privacy-v13-3 .avatar-button .avatar,
+  body.privacy-v13-3 .profile-card .avatar{
+    width:96px !important;
+    height:96px !important;
+    border-width:6px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    align-self:center !important;
+    justify-self:stretch !important;
+    width:100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:13px !important;
+    margin:-3px 0 0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline div{
+    min-width:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:4px !important;
+    padding:0 !important;
+    border:0 !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline svg{
+    width:20px !important;
+    height:20px !important;
+    flex:0 0 20px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline strong{
+    font-size:.88rem !important;
+    line-height:1 !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline span{
+    display:none !important;
+  }
+}
+
+@media(max-width:390px){
+  body.privacy-v13-3 .profile-summary-row{
+    grid-template-columns:88px minmax(0,1fr) !important;
+    gap:8px !important;
+  }
+  body.privacy-v13-3 .avatar-button{
+    width:88px !important;
+    height:88px !important;
+    margin-top:-36px !important;
+  }
+  body.privacy-v13-3 .avatar-button .avatar,
+  body.privacy-v13-3 .profile-card .avatar{
+    width:88px !important;
+    height:88px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline{
+    gap:8px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline svg{
+    width:18px !important;
+    height:18px !important;
+    flex-basis:18px !important;
+  }
+  body.privacy-v13-3 .profile-stats.profile-stats-inline strong{
+    font-size:.79rem !important;
+  }
+}

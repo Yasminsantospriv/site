@@ -2102,3 +2102,104 @@ body.instagram-reference{
     flex:0 0 auto;
   }
 }
+
+/* =====================================================
+   V17.7.7 — INSTAGRAM SIMPLIFICADO
+   Reels e Direct removidos; navegação pública reduzida.
+   ===================================================== */
+body.instagram-reference .ig-profile-actions{
+  grid-template-columns:1fr 42px !important;
+}
+body.instagram-reference .ig-profile-actions:has(.ig-admin-profile-add:not([hidden])){
+  grid-template-columns:1fr 42px 42px !important;
+}
+body.instagram-reference .ig-mobile-bottom-nav{
+  grid-template-columns:repeat(3,1fr) !important;
+}
+@media(max-width:720px){
+  body.instagram-reference .ig-profile-actions{
+    grid-template-columns:1fr 38px !important;
+  }
+  body.instagram-reference .ig-profile-actions:has(.ig-admin-profile-add:not([hidden])){
+    grid-template-columns:1fr 38px 38px !important;
+  }
+}
+
+/* V17.7.7 — garantia visual: Reels/Direct não reaparecem mesmo com cache parcial. */
+body.instagram-reference .ig-reels-view,
+body.instagram-reference .ig-direct-panel,
+body.instagram-reference .ig-floating-message,
+body.instagram-reference [data-open-direct],
+body.instagram-reference [data-instagram-view="reels"]{
+  display:none !important;
+}
+body.instagram-reference .ig-desktop-sidebar nav{
+  align-content:start;
+}
+
+/* =====================================================
+   V17.7.8 — INSTAGRAM: FOTO DE PERFIL REDONDA + SETAS ESTÁVEIS
+   ===================================================== */
+
+/* A foto ampliada do perfil mantém exatamente o formato circular. */
+body.instagram-reference .ig-profile-photo-modal .instagram-image-dialog{
+  width:min(360px,80vw) !important;
+  height:auto !important;
+  aspect-ratio:1 / 1 !important;
+  overflow:hidden !important;
+  border:3px solid rgba(255,255,255,.92) !important;
+  border-radius:50% !important;
+  background:#050505 !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.55) !important;
+}
+body.instagram-reference .ig-profile-photo-modal .instagram-image-dialog img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
+}
+body.instagram-reference .ig-profile-photo-modal .instagram-image-dialog > button{
+  top:7px !important;
+  right:7px !important;
+  width:38px !important;
+  height:38px !important;
+  z-index:5 !important;
+}
+
+/* Não usa :first-child/:last-child: os controles de admin são inseridos
+   dinamicamente dentro da mesma área e quebravam a posição da seta direita. */
+body.instagram-reference #postPrev{
+  left:12px !important;
+  right:auto !important;
+}
+body.instagram-reference #postNext{
+  left:auto !important;
+  right:12px !important;
+}
+body.instagram-reference #postPrev,
+body.instagram-reference #postNext{
+  z-index:20 !important;
+}
+
+@media(max-width:760px){
+  body.instagram-reference #postPrev,
+  body.instagram-reference #postNext{
+    position:fixed !important;
+    top:31dvh !important;
+    transform:translateY(-50%) !important;
+    width:44px !important;
+    height:44px !important;
+    border-radius:50% !important;
+    background:rgba(0,0,0,.58) !important;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  body.instagram-reference #postPrev{
+    left:max(10px,env(safe-area-inset-left)) !important;
+    right:auto !important;
+  }
+  body.instagram-reference #postNext{
+    right:max(10px,env(safe-area-inset-right)) !important;
+    left:auto !important;
+  }
+}
